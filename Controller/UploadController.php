@@ -29,22 +29,22 @@ class UploadController extends Controller
         $thumbSize = $this->container->getParameter('comur_image.media_lib_thumb_size');
         $uploadUrl = $config['uploadConfig']['uploadUrl'];
         $uploadUrl = substr($uploadUrl, -strlen('/')) === '/' ? $uploadUrl : $uploadUrl . '/';
-        
+
         // We must use a streamed response because the UploadHandler echoes directly
         $response = new StreamedResponse();
-        
+
         $webDir = $config['uploadConfig']['webDir'];
         $webDir = substr($webDir, -strlen('/')) === '/' ? $webDir : $webDir . '/';
         if($config['uploadConfig']['generateFilename']){
-          $filename = sha1(uniqid(mt_rand(), true));  
-        } 
-        else 
+          $filename = sha1(uniqid(mt_rand(), true));
+        }
+        else
         {
             $filename = $request->files->get('image_upload_file')->getClientOriginalName();
             if(file_exists($uploadUrl.$thumbsDir.'/'.$filename))
             {
                 $filename = time().'-'.$filename;
-            }   
+            }
         }
 
         $galleryDir = $this->container->getParameter('comur_image.gallery_dir');
@@ -99,7 +99,7 @@ class UploadController extends Controller
         $response->setCallback(function () use($handlerConfig, $errorMessages) {
             new UploadHandler($handlerConfig, true, $errorMessages);
         });
-        
+
         return $response->send();
     }
 
@@ -122,7 +122,7 @@ class UploadController extends Controller
         $tarH = (int) round($config['cropConfig']['minHeight']);
 
         //Issue 36
-        if($x < 0) 
+        if($x < 0)
         {
             $w = $w + $x;
             $x = 0;
@@ -178,10 +178,11 @@ class UploadController extends Controller
                 // $destH = $h;
                 list($destW, $destH) = $this->getMinResizeValues($w, $h, $tarW, $tarH);
             }
-            
+
         }
 
         $this->resizeCropImage($destSrc,$src,0,0,$x,$y,$destW,$destH,$w,$h);
+        rename($src,$uploadUrl.'/'.$imageName);
 
         $galleryThumbOk = false;
         $isGallery = isset($config['uploadConfig']['isGallery']) ? $config['uploadConfig']['isGallery'] : false;
@@ -208,12 +209,12 @@ class UploadController extends Controller
                 mkdir($thumbDir);
             }
 
-            
+
 
             foreach($thumbs as $thumb){
                 $maxW = $thumb['maxWidth'];
                 $maxH = $thumb['maxHeight'];
-                
+
                 if(!isset($thumb['forGallery']) && $maxW == $gThumbSize && $maxH == $gThumbSize){
                     $galleryThumbOk = true;
                 }
@@ -230,8 +231,8 @@ class UploadController extends Controller
             }
         }
 
-        return new Response(json_encode(array('success' => true, 
-            'filename'=>$this->container->getParameter('comur_image.cropped_image_dir').'/'.$imageName, 
+        return new Response(json_encode(array('success' => true,
+            'filename'=>$this->container->getParameter('comur_image.cropped_image_dir').'/'.$imageName,
             'previewSrc' => $previewSrc,
             'galleryThumb' => $this->container->getParameter('comur_image.cropped_image_dir') . '/' . $this->container->getParameter('comur_image.thumbs_dir').'/'.$gThumbSize.'x'.$gThumbSize.'-' .$imageName)));
     }
@@ -299,7 +300,7 @@ class UploadController extends Controller
         $files = array();
 
         $result['thumbsDir'] = $this->container->getParameter('comur_image.thumbs_dir');
-        
+
         if (!is_dir($request->request->get('dir'))) {
             mkdir($request->request->get('dir').'/', 0755, true);
         }
@@ -342,18 +343,18 @@ class UploadController extends Controller
         }
 
         $imgR = $srcFunc($imgSrc);
-        
+
         if(round($srcW/$srcH, 2) != round($destW/$destH, 2)){
             $destW = $srcW;
             $destH = $srcH;
         }
         $dstR = imagecreatetruecolor( $destW, $destH );
-        
+
         if($type == 'png'){
             imagealphablending( $dstR, false );
             imagesavealpha( $dstR, true );
         }
-        
+
         imagecopyresampled($dstR,$imgR,$destX,$destY,$srcX,$srcY,$destW,$destH,$srcW,$srcH);
 
         switch ($type) {
@@ -365,7 +366,7 @@ class UploadController extends Controller
                 imagesavealpha($dstR, true);
                 break;
         }
-        
+
         $writeFunc($dstR,$destSrc,$imageQuality);
     }
 }
